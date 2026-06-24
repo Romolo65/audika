@@ -453,6 +453,81 @@ input:focus, .select-input:focus {
 .hidden { display: none !important; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== MOBILE OVERLAY (sidebar backdrop) ===== */
+.sidebar-backdrop {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9;
+  backdrop-filter: blur(2px);
+}
+.sidebar-backdrop.visible { display: block; }
+
+/* ===== RESPONSIVE — MOBILE ===== */
+@media (max-width: 768px) {
+
+  /* Sidebar: slide-over su mobile */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 82vw; max-width: 300px;
+    transform: translateX(-100%);
+    z-index: 10;
+    border-radius: 0 16px 16px 0;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+  }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .sidebar.collapsed { width: 82vw; transform: translateX(-100%); }
+
+  /* Topbar compatta */
+  .topbar { padding: 12px 14px; gap: 10px; }
+  .topbar-brand { font-size: .88rem; }
+  .topbar-sub { display: none; }
+  .badge { font-size: .68rem; padding: 3px 8px; }
+
+  /* Chat area: padding ridotto */
+  .message { padding: 12px 14px; gap: 8px; }
+  .msg-bubble { max-width: 88%; font-size: .88rem; padding: 12px 14px; }
+  .msg-avatar { width: 30px; height: 30px; font-size: .75rem; }
+
+  /* Welcome screen: compatta */
+  .welcome-screen { padding: 24px 16px; justify-content: flex-start; padding-top: 32px; }
+  .welcome-icon-ring { width: 60px; height: 60px; margin-bottom: 14px; }
+  .welcome-icon-ring svg { width: 36px; height: 36px; }
+  .welcome-title { font-size: 1.35rem; margin-bottom: 8px; }
+  .welcome-desc { font-size: .875rem; margin-bottom: 20px; }
+  .welcome-suggestions { gap: 8px; }
+  .suggestion-chip { font-size: .82rem; padding: 9px 14px; }
+
+  /* Input area: sopra la tastiera virtuale */
+  .input-area {
+    padding: 10px 12px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .input-wrapper { padding: 8px 10px; }
+  .user-textarea { font-size: .9rem; }
+  .send-btn { width: 36px; height: 36px; }
+  .input-disclaimer { font-size: .7rem; margin-top: 6px; }
+
+  /* Modal: full-bottom-sheet su mobile */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    border-radius: 20px 20px 0 0;
+    padding: 28px 20px 32px;
+    max-width: 100%;
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+
+  /* Messaggi: larghezza piena quasi */
+  .messages-container { padding: 16px 0; }
+}
+
+@media (max-width: 400px) {
+  .welcome-title { font-size: 1.2rem; }
+  .suggestion-chip { font-size: .78rem; padding: 8px 12px; }
+  .msg-bubble { max-width: 93%; }
+}
 </style>
 </head>
 <body>
@@ -507,6 +582,9 @@ input:focus, .select-input:focus {
     <p style="text-align:center;font-size:.7rem;color:#ccc;margin-top:6px;">v1.6</p>
   </div>
 </div>
+
+<!-- Sidebar backdrop (mobile) -->
+<div id="sidebar-backdrop" class="sidebar-backdrop"></div>
 
 <!-- ===== APP SHELL ===== -->
 <div id="app" class="app-hidden">
@@ -769,13 +847,28 @@ LINEE GUIDA DI RISPOSTA:
 
 
   // ── SIDEBAR ────────────────────────────────────────────────────────────────
+  const backdrop = document.getElementById('sidebar-backdrop');
+
+  function openSidebar() {
+    sidebar.classList.add('mobile-open');
+    backdrop.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('mobile-open');
+    backdrop.classList.remove('visible');
+    document.body.style.overflow = '';
+  }
+
   sidebarToggle.addEventListener('click', () => {
     if (window.innerWidth <= 768) {
-      sidebar.classList.toggle('mobile-open');
+      sidebar.classList.contains('mobile-open') ? closeSidebar() : openSidebar();
     } else {
       sidebar.classList.toggle('collapsed');
     }
   });
+
+  backdrop.addEventListener('click', closeSidebar);
 
   // Quick category buttons
   document.querySelectorAll('.quick-btn').forEach(btn => {
@@ -784,7 +877,7 @@ LINEE GUIDA DI RISPOSTA:
       if (prompt) {
         userInput.value = prompt;
         userInput.dispatchEvent(new Event('input'));
-        if (window.innerWidth <= 768) sidebar.classList.remove('mobile-open');
+        if (window.innerWidth <= 768) closeSidebar();
         sendMessage();
       }
     });
